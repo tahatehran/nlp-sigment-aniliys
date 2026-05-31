@@ -13,32 +13,86 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for RTL and styling
+# Custom CSS for Professional UI
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap');
+
+    :root {
+        --primary-color: #ef4056;
+        --bg-light: #f8f9fa;
+        --text-dark: #343a40;
+    }
 
     html, body, [class*="css"] {
         font-family: 'Vazirmatn', sans-serif;
         direction: rtl;
         text-align: right;
     }
+
+    .main {
+        background-color: var(--bg-light);
+    }
+
+    /* Professional Card Styling */
+    .stMetric {
+        background-color: white;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border: 1px solid #eee;
+    }
+
     .stButton>button {
         width: 100%;
-        border-radius: 5px;
-        height: 3em;
-        background-color: #ef4056;
+        border-radius: 8px;
+        height: 3.5em;
+        background-color: var(--primary-color);
         color: white;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border: none;
     }
+
+    .stButton>button:hover {
+        background-color: #d8364b;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 64, 86, 0.3);
+    }
+
     .sentiment-box {
-        padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-        border: 1px solid #ddd;
+        padding: 25px;
+        border-radius: 15px;
+        margin: 20px 0;
+        border: none;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
     }
-    .positive { background-color: #e8f5e9; border-color: #4caf50; }
-    .negative { background-color: #ffebee; border-color: #f44336; }
-    .neutral { background-color: #fff3e0; border-color: #ff9800; }
+
+    .sentiment-box:hover {
+        transform: scale(1.01);
+    }
+
+    .positive { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-right: 8px solid #4caf50; color: #2e7d32; }
+    .negative { background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-right: 8px solid #f44336; color: #c62828; }
+    .neutral { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-right: 8px solid #ff9800; color: #ef6c00; }
+
+    /* Custom Header */
+    .custom-header {
+        background-color: white;
+        padding: 20px;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+
+    /* Expander Styling */
+    .stExpander {
+        border: none !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-radius: 10px !important;
+        background-color: white;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -53,82 +107,114 @@ def load_rag():
 # Sidebar
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/2/29/Digikala_logo.svg", width=200)
-    st.title("داشبورد مدیریتی")
-    st.info("این پروژه با استفاده از معماری RAG و مدل‌های ترنسفورمر برای تحلیل احساسات نظرات دیجی‌کالا طراحی شده است.")
+    st.title("🎛 کنترل پنل")
+    st.markdown("---")
+    st.info("این سیستم با ترکیب مدل‌های BERT و معماری RAG، تحلیل دقیقی از نظرات ارائه می‌دهد.")
 
-    if st.button("پاکسازی حافظه"):
-        st.cache_resource.clear()
-        st.rerun()
+    with st.expander("🛠 تنظیمات پیشرفته"):
+        k_val = st.slider("تعداد نظرات مشابه (RAG)", 1, 5, 3)
+        clear_cache = st.button("🔄 بازنشانی حافظه")
+        if clear_cache:
+            st.cache_resource.clear()
+            st.rerun()
 
-# Main UI
-st.title("🚀 سیستم تحلیل هوشمند بخش‌های متنی (NLP)")
-st.subheader("تحلیل دقیق احساسات به همراه استدلال هوش مصنوعی")
+# Header Section
+st.markdown("""
+    <div class="custom-header">
+        <h1 style='color: #ef4056; margin: 0;'>🚀 تحلیلگر هوشمند نظرات دیجی‌کالا</h1>
+        <p style='color: #666; margin-top: 5px;'>استخراج احساسات و تولید استدلال مبتنی بر داده (RAG Architecture)</p>
+    </div>
+""", unsafe_allow_True=True)
 
-tab1, tab2 = st.tabs(["🔍 تحلیل نظر", "📊 آمار و داشبورد"])
+tab1, tab2 = st.tabs(["🔍 تحلیل زنده متن", "📊 داشبورد آماری"])
 
 with tab1:
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([3, 2], gap="large")
 
     with col1:
-        user_input = st.text_area("متن نظر خود را وارد کنید:", placeholder="مثلاً: کیفیت ساخت این گوشی عالیه ولی باتریش زود خالی میشه...", height=150)
-        analyze_btn = st.button("تحلیل و بررسی")
+        st.markdown("### 📝 ورود اطلاعات")
+        user_input = st.text_area(
+            "نظر خود را برای تحلیل وارد کنید:",
+            placeholder="مثال: این محصول عالی است اما بسته‌بندی آن ضعیف بود...",
+            height=200,
+            help="متن نظر را اینجا تایپ کنید."
+        )
+        analyze_btn = st.button("✨ شروع تحلیل هوشمند")
+
+    with col2:
+        if analyze_btn and user_input:
+            with st.spinner("🤖 هوش مصنوعی در حال فکر کردن..."):
+                start_time = time.time()
+                rag = load_rag()
+                score, confidence = rag.get_sentiment(user_input)
+                explanation = rag.generate_explanation(user_input, score)
+                similar = rag.retrieve_similar(user_input, k=k_val)
+                elapsed = time.time() - start_time
+
+                if score > 3:
+                    css_class, label, icon = "positive", "مثبت", "😊"
+                elif score < 3:
+                    css_class, label, icon = "negative", "منفی", "😞"
+                else:
+                    css_class, label, icon = "neutral", "خنثی", "😐"
+
+                st.markdown(f"""
+                    <div class="sentiment-box {css_class}">
+                        <h2 style='margin:0;'>{label} {icon}</h2>
+                        <hr style='border: 0.5px solid rgba(0,0,0,0.1);'>
+                        <p style='font-size: 1.1em;'><b>امتیاز شدت:</b> {score} از ۵</p>
+                        <p style='font-size: 1.1em;'><b>ضریب اطمینان:</b> {confidence:.2%}</p>
+                        <small>زمان پردازش: {elapsed:.2f} ثانیه</small>
+                    </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown("### 💡 دلیل و استدلال مدل:")
+                st.info(explanation)
+        else:
+            st.info("👈 متن نظر را وارد کرده و دکمه تحلیل را بزنید تا نتایج اینجا نمایش داده شوند.")
 
     if analyze_btn and user_input:
-        with st.spinner("در حال پردازش با هوش مصنوعی..."):
-            rag = load_rag()
-            score, confidence = rag.get_sentiment(user_input)
-            explanation = rag.generate_explanation(user_input, score)
-            similar = rag.retrieve_similar(user_input, k=3)
-
-            # Determine color and label
-            if score > 3:
-                css_class = "positive"
-                label = "مثبت"
-                icon = "😊"
-            elif score < 3:
-                css_class = "negative"
-                label = "منفی"
-                icon = "😞"
-            else:
-                css_class = "neutral"
-                label = "خنثی"
-                icon = "😐"
-
-            st.markdown(f"""
-                <div class="sentiment-box {css_class}">
-                    <h3>نتیجه تحلیل: {label} {icon}</h3>
-                    <p><b>امتیاز شدت (۱ تا ۵):</b> {score}</p>
-                    <p><b>دقت مدل:</b> {confidence:.2f}</p>
-                </div>
-            """, unsafe_allow_html=True)
-
-            st.success("### 🤖 دلیل و استدلال هوش مصنوعی:")
-            st.write(explanation)
-
-            with st.expander("📚 نظرات مشابه یافت شده در پایگاه داده (RAG):"):
-                for s in similar:
-                    st.write(f"- {s}")
+        st.markdown("---")
+        with st.expander("📚 شواهد بازیابی شده (RAG Context)", expanded=False):
+            for i, s in enumerate(similar, 1):
+                st.write(f"**{i}.** {s}")
 
 with tab2:
-    st.header("نمای کلی داده‌ها")
+    st.header("📈 نگاهی به داده‌های مرجع")
     try:
         df = pd.read_csv("data/digikala_samples.csv")
 
-        c1, c2, c3 = st.columns(3)
-        c1.metric("تعداد نظرات مرجع", len(df))
-        c2.metric("مدل پایه", "mBERT")
-        c3.metric("تکنولوژی RAG", "FAISS + GPT2-FA")
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("تعداد نظرات", len(df))
+        m2.metric("مدل برتر", "mBERT")
+        m3.metric("نوع معماری", "RAG")
+        m4.metric("زبان", "فارسی")
 
-        # Simple Length distribution
-        df['length'] = df['text'].str.len()
-        fig = px.histogram(df, x="length", title="توزیع طول نظرات (تعداد کاراکتر)", color_discrete_sequence=['#ef4056'])
-        st.plotly_chart(fig, use_container_width=True)
+        c1, c2 = st.columns(2)
 
-        st.dataframe(df.head(10), use_container_width=True)
+        with c1:
+            df['length'] = df['text'].str.len()
+            fig_hist = px.histogram(
+                df, x="length",
+                title="توزیع طول نظرات (تعداد کاراکتر)",
+                color_discrete_sequence=['#ef4056'],
+                labels={'length': 'طول متن'}
+            )
+            fig_hist.update_layout(plot_bgcolor='white')
+            st.plotly_chart(fig_hist, width='stretch')
+
+        with c2:
+            st.markdown("### 📋 پیش‌نمایش داده‌ها")
+            st.dataframe(df.head(15), width='stretch')
 
     except Exception as e:
-        st.error(f"خطا در بارگذاری داده‌ها: {e}")
+        st.error(f"⚠️ خطا در بارگذاری دیتابیس: {e}")
 
 # Footer
 st.markdown("---")
-st.markdown("<p style='text-align: center;'>پروژه درس NLP - مقطع کارشناسی ارشد هوش مصنوعی</p>", unsafe_allow_html=True)
+st.markdown("""
+    <div style='text-align: center; color: #888; padding: 20px;'>
+        طراحی شده برای پروژه ارشد هوش مصنوعی • ۱۴۰۳<br>
+        <small>قدرت گرفته از Hugging Face Transformers & FAISS</small>
+    </div>
+""", unsafe_allow_html=True)

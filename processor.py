@@ -7,12 +7,22 @@ import faiss
 import os
 
 class SentimentRAG:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(SentimentRAG, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, data_path="data/digikala_samples.csv"):
-        print("Initializing models...")
+        if hasattr(self, 'initialized') and self.initialized:
+            return
+
+        print("Initializing SentimentRAG models...")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
-        # 1. Sentiment Model (mBERT)
+        # 1. Sentiment Model
         self.sentiment_pipe = pipeline(
             "sentiment-analysis",
             model="nlptown/bert-base-multilingual-uncased-sentiment",
@@ -20,26 +30,36 @@ class SentimentRAG:
             token=hf_token
         )
 
-        # 2. Embedding Model for RAG (MiniLM)
-        self.embed_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2', use_auth_token=hf_token)
+        # 2. Embedding Model
+        self.embed_model = SentenceTransformer(
+            'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
+            use_auth_token=hf_token
+        )
 
-        # 3. GPT2 for Reasoning (Persian optimized GPT2)
+        # 3. Reasoning Model
         self.gen_tokenizer = AutoTokenizer.from_pretrained("HooshvareLab/gpt2-fa-comment", token=hf_token)
         self.gen_model = AutoModelForCausalLM.from_pretrained("HooshvareLab/gpt2-fa-comment", token=hf_token).to(self.device)
 
-        # Load Data and Build Index
+        # Load Data
         if not os.path.exists(data_path):
-            raise FileNotFoundError(f"Data file {data_path} not found. Please run prepare_data.py first.")
+            from prepare_data import prepare_data
+            prepare_data()
+
+        if not os.path.exists(data_path):
+            raise FileNotFoundError(f"Data file {data_path} could not be created.")
 
         self.df = pd.read_csv(data_path)
         self.texts = self.df['text'].tolist()
 
-        print("Building FAISS index...")
-        embeddings = self.embed_model.encode(self.texts, show_progress_bar=True)
+        print(f"Building FAISS index for {len(self.texts)} items...")
+        embeddings = self.embed_model.encode(self.texts, show_progress_bar=False)
         self.index = faiss.IndexFlatL2(embeddings.shape[1])
         self.index.add(np.array(embeddings).astype('float32'))
 
+        self.initialized = True
+
     def get_sentiment(self, text):
+        # Truncate text to fit model max length
         result = self.sentiment_pipe(text[:512])[0]
         score = int(result['label'].split()[0])
         return score, result['score']
@@ -50,30 +70,29 @@ class SentimentRAG:
         return [self.texts[i] for i in indices[0]]
 
     def generate_explanation(self, text, sentiment_score):
-        similar_comments = self.retrieve_similar(text)
-        context = " ".join([f"نظر مشابه: {c[:80]}" for c in similar_comments])
+        similar_comments = self.retrieve_similar(text, k=2)
+        context = " ".join([f"نمونه: {c[:60]}" for c in similar_comments])
         sentiment_label = "مثبت" if sentiment_score > 3 else "منفی" if sentiment_score < 3 else "خنثی"
 
-        prompt = f"متن: {text}\nاحساس: {sentiment_label}\nشواهد: {context}\nدلیل فنی هوش مصنوعی:"
+        prompt = f"متن: {text[:100]}\nاحساس: {sentiment_label}\nشواهد: {context}\nدلیل فنی:"
         inputs = self.gen_tokenizer(prompt, return_tensors="pt", truncation=True, max_length=400).to(self.device)
 
         outputs = self.gen_model.generate(
             **inputs,
-            max_new_tokens=40,
+            max_new_tokens=50,
             do_sample=True,
-            top_k=40,
-            top_p=0.92,
-            temperature=0.8,
+            top_p=0.9,
+            temperature=0.7,
             pad_token_id=self.gen_tokenizer.eos_token_id
         )
 
         full_text = self.gen_tokenizer.decode(outputs[0], skip_special_tokens=True)
-        if "دلیل فنی هوش مصنوعی:" in full_text:
-            explanation = full_text.split("دلیل فنی هوش مصنوعی:")[-1].strip()
+        if "دلیل فنی:" in full_text:
+            explanation = full_text.split("دلیل فنی:")[-1].strip()
         else:
-            explanation = "تحلیل بر اساس الگوهای مشابه در دیتاست و کلمات کلیدی موجود در متن کاربر انجام شده است."
+            explanation = "تحلیل بر اساس الگوهای متنی مشابه در پایگاه داده دیجی‌کالا انجام شده است."
 
-        return explanation if len(explanation) > 5 else "با توجه به کلمات استفاده شده و شباهت با نظرات دیگر، این نظر دارای بار احساسی مشخص شده است."
+        return explanation if len(explanation) > 10 else "این نظر به دلیل شباهت با نظرات ثبت شده قبلی و الگوهای کلامی شناسایی شده، دارای بار احساسی مشخص شده است."
 
 if __name__ == "__main__":
     rag = SentimentRAG()

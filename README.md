@@ -34,8 +34,8 @@ license: mit
 
 ۱. ابتدا مخزن را کلون کنید:
 ```bash
-git clone https://github.com/your-username/digikala-rag.git
-cd digikala-rag
+git clone https://github.com/tahatehran/nlp-sigment-aniliys.git
+cd nlp-sigment-aniliys
 ```
 
 ۲. کتابخانه‌های مورد نیاز را نصب کنید:
@@ -59,4 +59,4 @@ streamlit run app.py
 ---
 ### 🎓 پروژه درس پردازش زبان طبیعی
 **مقطع:** کارشناسی ارشد هوش مصنوعی
-**توسعه‌دهنده:** [نام شما]
+**توسعه‌دهنده:** Taha Tehrani Nasab

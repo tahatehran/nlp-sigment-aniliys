@@ -6,10 +6,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  test_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,14 +29,11 @@ jobs:
           python prepare_data.py
           python -m unittest discover tests
 
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          lfs: true
+      - name: Cleanup Cache and Logs
+        run: |
+          find . -type d -name "__pycache__" -exec rm -rf {} +
+          find . -type f -name "*.log" -delete
+          echo "Cleanup of __pycache__ and .log files completed."
 
       - name: Push to Hugging Face
         env:
@@ -42,5 +42,5 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git remote add hf https://tahatehrani:$HF_TOKEN@huggingface.co/spaces/tahatehrani/nlp-segment-analysis
-          # push logic
+          # push command:
           git push --force hf main

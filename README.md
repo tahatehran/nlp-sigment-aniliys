@@ -4,32 +4,29 @@ emoji: 📚
 colorFrom: blue
 colorTo: indigo
 sdk: streamlit
-sdk_version: 1.28.0
+sdk_version: 1.58.0
 app_file: app.py
 pinned: false
 license: mit
 ---
 
-# NLP Segment Analysis 🚀
-### تحلیل پیشرفته احساسات نظرات دیجی‌کالا با معماری RAG
+# NLP Segment Analysis
 
-این پروژه برای مقطع کارشناسی ارشد هوش مصنوعی طراحی شده و قادر است علاوه بر تشخیص احساس (مثبت/منفی/خنثی)، دلیل این تحلیل را با استفاده از مدل‌های مولد توضیح دهد.
+تحلیل بخش‌های متنی با پردازش زبان طبیعی
 
-## ویژگی‌ها:
-- **تحلیل ۵ مرحله‌ای احساسات** (از ۱ تا ۵ ستاره)
-- **معماری RAG** برای بازیابی نظرات مشابه و استدلال دقیق
-- **داشبورد مدیریتی** با Streamlit
-- **کاملاً فارسی** و بهینه شده برای رم پایین (Under 8GB)
+## نحوه استفاده
 
-## نحوه استفاده:
-۱. متن خود را در کادر مربوطه وارد کنید.
-۲. دکمه "تحلیل و بررسی" را بزنید.
-۳. نتیجه، دقت مدل و دلیل هوش مصنوعی را مشاهده کنید.
-
-## مدل‌های مورد استفاده:
-- `nlptown/bert-base-multilingual-uncased-sentiment`
-- `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
-- `HooshvareLab/gpt2-fa-comment`
+۱. متن خود را وارد کنید
+۲. دکمه تحلیل را بزنید
+۳. نتیجه را مشاهده کنید
 
 ---
-*ساخته شده برای ارائه آکادمیک و استقرار در Hugging Face*
+### جزئیات پروژه (مقطع ارشد هوش مصنوعی)
+این پروژه با استفاده از داده‌های نظرات دیجی‌کالا و مدل‌های زیر پیاده‌سازی شده است:
+- **داده‌ها:** fibonacciai/Digikala-Comments، ParsiAI/digikala-sentiment-analysis و EhsanShahbazi/digikala-comments
+- **مدل‌ها:**
+  - `openai-community/gpt2` (بهینه شده با `HooshvareLab/gpt2-fa-comment`)
+  - `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
+  - `nlptown/bert-base-multilingual-uncased-sentiment`
+
+**ویژگی اصلی:** استفاده از معماری RAG برای توضیح علت تحلیل احساس توسط هوش مصنوعی.

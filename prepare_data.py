@@ -10,14 +10,15 @@ def clean_text(text):
     return text
 
 def prepare_data():
-    print("Loading datasets from Hugging Face...")
+    # Use token if available in environment
+    hf_token = os.getenv("HUGGINGFACE_TOKEN")
+    print(f"Loading datasets from Hugging Face... (Using token: {'Yes' if hf_token else 'No'})")
     dfs = []
 
     # 1. fibonacciai/Digikala-Comments
     try:
-        ds1 = load_dataset("fibonacciai/Digikala-Comments", split='train')
+        ds1 = load_dataset("fibonacciai/Digikala-Comments", split='train', token=hf_token)
         df1 = pd.DataFrame(ds1)
-        # Identify text column: it's 'Text' based on inspection
         col = 'Text' if 'Text' in df1.columns else ('comment' if 'comment' in df1.columns else 'text')
         if col in df1.columns:
             df1 = df1.rename(columns={col: 'text'})
@@ -28,7 +29,7 @@ def prepare_data():
 
     # 2. ParsiAI/digikala-sentiment-analysis
     try:
-        ds2 = load_dataset("ParsiAI/digikala-sentiment-analysis", split='train')
+        ds2 = load_dataset("ParsiAI/digikala-sentiment-analysis", split='train', token=hf_token)
         df2 = pd.DataFrame(ds2)
         col = 'Text' if 'Text' in df2.columns else ('comment' if 'comment' in df2.columns else 'text')
         if col in df2.columns:
@@ -38,22 +39,27 @@ def prepare_data():
     except Exception as e:
         print(f"Could not load ds2: {e}")
 
-    # 3. EhsanShahbazi/digikala-comments
-    # Note: This is gated. If no token, it fails. We'll try, but handle gracefully.
+    # 3. EhsanShahbazi/digikala-comments (Gated)
     try:
-        ds3 = load_dataset("EhsanShahbazi/digikala-comments", split='train')
+        ds3 = load_dataset("EhsanShahbazi/digikala-comments", split='train', token=hf_token)
         df3 = pd.DataFrame(ds3)
-        col = 'Text' if 'Text' in df3.columns else ('comment' if 'comment' in df3.columns else 'text')
-        if col in df3.columns:
-            df3 = df3.rename(columns={col: 'text'})
-            dfs.append(df3[['text']])
-            print(f"Loaded {len(df3)} rows from EhsanShahbazi/digikala-comments")
+        # Check potential column names for this specific dataset
+        potential_cols = ['Text', 'comment', 'text', 'Comment']
+        found = False
+        for col in potential_cols:
+            if col in df3.columns:
+                df3 = df3.rename(columns={col: 'text'})
+                dfs.append(df3[['text']])
+                print(f"Loaded {len(df3)} rows from EhsanShahbazi/digikala-comments using col '{col}'")
+                found = True
+                break
+        if not found:
+            print(f"Columns in ds3: {df3.columns.tolist()}")
     except Exception as e:
-        print(f"Note: EhsanShahbazi/digikala-comments skipped (usually requires login/gated access). {e}")
+        print(f"Could not load ds3 (EhsanShahbazi): {e}")
 
     if not dfs:
-        print("ERROR: No data could be loaded from any of the sources.")
-        # Create a dummy to avoid crash if necessary, but better to fail early
+        print("ERROR: No data could be loaded.")
         return
 
     print("Merging and cleaning...")
@@ -63,7 +69,6 @@ def prepare_data():
     df = df[df['text'].str.len() > 25]
     df = df.drop_duplicates(subset=['text'])
 
-    # User requested around 300-500 samples
     sample_size = min(500, len(df))
     df_sample = df.sample(n=sample_size, random_state=42)
 

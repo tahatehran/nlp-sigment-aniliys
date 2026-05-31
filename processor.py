@@ -4,29 +4,31 @@ import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 from sentence_transformers import SentenceTransformer
 import faiss
+import os
 
 class SentimentRAG:
     def __init__(self, data_path="data/digikala_samples.csv"):
         print("Initializing models...")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
         # 1. Sentiment Model (mBERT)
         self.sentiment_pipe = pipeline(
             "sentiment-analysis",
             model="nlptown/bert-base-multilingual-uncased-sentiment",
-            device=-1 if self.device == "cpu" else 0
+            device=-1 if self.device == "cpu" else 0,
+            token=hf_token
         )
 
         # 2. Embedding Model for RAG (MiniLM)
-        self.embed_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+        self.embed_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2', use_auth_token=hf_token)
 
         # 3. GPT2 for Reasoning (Persian optimized GPT2)
-        # Using HooshvareLab/gpt2-fa-comment as it is a specialized GPT2 for Persian comments
-        self.gen_tokenizer = AutoTokenizer.from_pretrained("HooshvareLab/gpt2-fa-comment")
-        self.gen_model = AutoModelForCausalLM.from_pretrained("HooshvareLab/gpt2-fa-comment").to(self.device)
+        self.gen_tokenizer = AutoTokenizer.from_pretrained("HooshvareLab/gpt2-fa-comment", token=hf_token)
+        self.gen_model = AutoModelForCausalLM.from_pretrained("HooshvareLab/gpt2-fa-comment", token=hf_token).to(self.device)
 
         # Load Data and Build Index
-        if not pd.io.common.file_exists(data_path):
+        if not os.path.exists(data_path):
             raise FileNotFoundError(f"Data file {data_path} not found. Please run prepare_data.py first.")
 
         self.df = pd.read_csv(data_path)
@@ -49,14 +51,10 @@ class SentimentRAG:
 
     def generate_explanation(self, text, sentiment_score):
         similar_comments = self.retrieve_similar(text)
-        # Construct context from similar comments
         context = " ".join([f"نظر مشابه: {c[:80]}" for c in similar_comments])
-
         sentiment_label = "مثبت" if sentiment_score > 3 else "منفی" if sentiment_score < 3 else "خنثی"
 
-        # Prompt engineering for better reasoning
         prompt = f"متن: {text}\nاحساس: {sentiment_label}\nشواهد: {context}\nدلیل فنی هوش مصنوعی:"
-
         inputs = self.gen_tokenizer(prompt, return_tensors="pt", truncation=True, max_length=400).to(self.device)
 
         outputs = self.gen_model.generate(

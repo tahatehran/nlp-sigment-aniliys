@@ -10,18 +10,18 @@ pinned: false
 license: mit
 ---
 
-# 🚀 سامانه تحلیل هوشمند نظرات دیجی‌کالا (RAG-based)
+# سامانه تحلیل هوشمند نظرات دیجی‌کالا (RAG-based)
 
 این پروژه یک سیستم پیشرفته برای تحلیل احساسات (Sentiment Analysis) نظرات کاربران دیجی‌کالا است که با استفاده از معماری **RAG (Retrieval-Augmented Generation)** پیاده‌سازی شده است.
 
-## ✨ ویژگی‌های کلیدی
+## ویژگی‌های کلیدی
 - **تحلیل دقیق احساسات:** استفاده از مدل mBERT برای تشخیص شدت احساس (۱ تا ۵ ستاره).
 - **استدلال هوش مصنوعی (RAG):** توضیح علت تحلیل بر اساس نظرات مشابه در دیتابیس.
 - **جستجوی معنایی:** بهره‌گیری از **FAISS** و **Sentence-Transformers** برای یافتن سریع نظرات مشابه.
 - **داشبورد مدیریتی:** نمایش آمار و توزیع داده‌ها با استفاده از Plotly و Streamlit.
 - **استقرار خودکار (CI/CD):** متصل به GitHub Actions برای تست و دیپلوی خودکار روی Hugging Face.
 
-## 🛠 تکنولوژی‌های استفاده شده
+## تکنولوژی‌های استفاده شده
 - **Language:** Python 3.12+
 - **Models:**
   - `nlptown/bert-base-multilingual-uncased-sentiment` (Sentiment)
@@ -30,7 +30,7 @@ license: mit
 - **Vector DB:** FAISS
 - **UI:** Streamlit
 
-## 📦 نصب و راه‌اندازی محلی
+## نصب و راه‌اندازی محلی
 
 ۱. ابتدا مخزن را کلون کنید:
 ```bash
@@ -53,10 +53,13 @@ python prepare_data.py
 streamlit run app.py
 ```
 
-## 🌐 میزبانی در Hugging Face
-این پروژه در **Hugging Face Spaces** میزبانی می‌شود. هر تغییر در شاخه `main` این مخزن، به صورت خودکار توسط GitHub Actions تست شده و در صورت موفقیت، روی Hugging Face آپدیت می‌شود.
+## میزبانی در Hugging Face
+این پروژه در **Hugging Face Spaces** میزبانی می‌شود. می‌توانید از طریق لینک زیر به صورت زنده از آن استفاده کنید:
+👉 [https://huggingface.co/spaces/tahatehrani/nlp-segment-analysis](https://huggingface.co/spaces/tahatehrani/nlp-segment-analysis)
+
+هر تغییر در شاخه `main` این مخزن، به صورت خودکار توسط GitHub Actions تست شده و در صورت موفقیت، روی Hugging Face آپدیت می‌شود.
 
 ---
-### 🎓 پروژه درس پردازش زبان طبیعی
+### پروژه درس پردازش زبان طبیعی
 **مقطع:** کارشناسی ارشد هوش مصنوعی
 **توسعه‌دهنده:** Taha Tehrani Nasab

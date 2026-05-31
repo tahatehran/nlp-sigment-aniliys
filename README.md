@@ -1,8 +1,8 @@
 ---
-title: NLP Segment Analysis
-emoji: 📚
-colorFrom: blue
-colorTo: indigo
+title: Digikala Sentiment RAG
+emoji: 📊
+colorFrom: red
+colorTo: gray
 sdk: streamlit
 sdk_version: 1.58.0
 app_file: app.py
@@ -10,23 +10,53 @@ pinned: false
 license: mit
 ---
 
-# NLP Segment Analysis
+# 🚀 سامانه تحلیل هوشمند نظرات دیجی‌کالا (RAG-based)
 
-تحلیل بخش‌های متنی با پردازش زبان طبیعی
+این پروژه یک سیستم پیشرفته برای تحلیل احساسات (Sentiment Analysis) نظرات کاربران دیجی‌کالا است که با استفاده از معماری **RAG (Retrieval-Augmented Generation)** پیاده‌سازی شده است.
 
-## نحوه استفاده
+## ✨ ویژگی‌های کلیدی
+- **تحلیل دقیق احساسات:** استفاده از مدل mBERT برای تشخیص شدت احساس (۱ تا ۵ ستاره).
+- **استدلال هوش مصنوعی (RAG):** توضیح علت تحلیل بر اساس نظرات مشابه در دیتابیس.
+- **جستجوی معنایی:** بهره‌گیری از **FAISS** و **Sentence-Transformers** برای یافتن سریع نظرات مشابه.
+- **داشبورد مدیریتی:** نمایش آمار و توزیع داده‌ها با استفاده از Plotly و Streamlit.
+- **استقرار خودکار (CI/CD):** متصل به GitHub Actions برای تست و دیپلوی خودکار روی Hugging Face.
 
-۱. متن خود را وارد کنید
-۲. دکمه تحلیل را بزنید
-۳. نتیجه را مشاهده کنید
+## 🛠 تکنولوژی‌های استفاده شده
+- **Language:** Python 3.12+
+- **Models:**
+  - `nlptown/bert-base-multilingual-uncased-sentiment` (Sentiment)
+  - `HooshvareLab/gpt2-fa-comment` (Reasoning)
+  - `paraphrase-multilingual-MiniLM-L12-v2` (Embedding)
+- **Vector DB:** FAISS
+- **UI:** Streamlit
+
+## 📦 نصب و راه‌اندازی محلی
+
+۱. ابتدا مخزن را کلون کنید:
+```bash
+git clone https://github.com/your-username/digikala-rag.git
+cd digikala-rag
+```
+
+۲. کتابخانه‌های مورد نیاز را نصب کنید:
+```bash
+pip install -r requirements.txt
+```
+
+۳. داده‌ها را آماده کنید:
+```bash
+python prepare_data.py
+```
+
+۴. برنامه را اجرا کنید:
+```bash
+streamlit run app.py
+```
+
+## 🌐 میزبانی در Hugging Face
+این پروژه در **Hugging Face Spaces** میزبانی می‌شود. هر تغییر در شاخه `main` این مخزن، به صورت خودکار توسط GitHub Actions تست شده و در صورت موفقیت، روی Hugging Face آپدیت می‌شود.
 
 ---
-### جزئیات پروژه (مقطع ارشد هوش مصنوعی)
-این پروژه با استفاده از داده‌های نظرات دیجی‌کالا و مدل‌های زیر پیاده‌سازی شده است:
-- **داده‌ها:** fibonacciai/Digikala-Comments، ParsiAI/digikala-sentiment-analysis و EhsanShahbazi/digikala-comments
-- **مدل‌ها:**
-  - `openai-community/gpt2` (بهینه شده با `HooshvareLab/gpt2-fa-comment`)
-  - `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
-  - `nlptown/bert-base-multilingual-uncased-sentiment`
-
-**ویژگی اصلی:** استفاده از معماری RAG برای توضیح علت تحلیل احساس توسط هوش مصنوعی.
+### 🎓 پروژه درس پردازش زبان طبیعی
+**مقطع:** کارشناسی ارشد هوش مصنوعی
+**توسعه‌دهنده:** [نام شما]

@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -43,6 +44,10 @@ st.markdown("""
 
 @st.cache_resource
 def load_rag():
+    if not os.path.exists("data/digikala_samples.csv"):
+        with st.spinner("در حال آماده‌سازی اولیه داده‌ها (فقط بار اول)..."):
+            from prepare_data import prepare_data
+            prepare_data()
     return SentimentRAG()
 
 # Sidebar

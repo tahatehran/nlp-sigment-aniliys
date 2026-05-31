@@ -17,5 +17,5 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git remote add hf https://huggingface.co/spaces/${{ github.repository_owner }}/nlp-segment-analysis
+          git remote add hf https://huggingface.co/spaces/tahatehrani/nlp-segment-analysis
           git push --force hf main

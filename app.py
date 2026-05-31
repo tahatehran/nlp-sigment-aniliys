@@ -93,27 +93,35 @@ st.markdown("""
         border-radius: 10px !important;
         background-color: white;
     }
+
+    /* Table Styling */
+    div[data-testid="stDataFrame"] {
+        direction: rtl;
+        text-align: right;
+        border-radius: 10px;
+        overflow: hidden;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 @st.cache_resource
 def load_rag():
-    if not os.path.exists("data/digikala_samples.csv"):
-        with st.spinner("در حال آماده‌سازی اولیه داده‌ها (فقط بار اول)..."):
-            from prepare_data import prepare_data
-            prepare_data()
+    # Always call prepare_data to keep it updated as requested
+    from prepare_data import prepare_data
+    with st.spinner("در حال بروزرسانی و بارگذاری داده‌ها..."):
+        prepare_data()
     return SentimentRAG()
 
 # Sidebar
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/2/29/Digikala_logo.svg", width=200)
-    st.title("🎛 کنترل پنل")
+    st.title("کنترل پنل")
     st.markdown("---")
     st.info("این سیستم با ترکیب مدل‌های BERT و معماری RAG، تحلیل دقیقی از نظرات ارائه می‌دهد.")
 
-    with st.expander("🛠 تنظیمات پیشرفته"):
+    with st.expander("تنظیمات پیشرفته"):
         k_val = st.slider("تعداد نظرات مشابه (RAG)", 1, 5, 3)
-        clear_cache = st.button("🔄 بازنشانی حافظه")
+        clear_cache = st.button("بازنشانی حافظه")
         if clear_cache:
             st.cache_resource.clear()
             st.rerun()
@@ -121,29 +129,29 @@ with st.sidebar:
 # Header Section
 st.markdown("""
     <div class="custom-header">
-        <h1 style='color: #ef4056; margin: 0;'>🚀 تحلیلگر هوشمند نظرات دیجی‌کالا</h1>
-        <p style='color: #666; margin-top: 5px;'>استخراج احساسات و تولید استدلال مبتنی بر داده (RAG Architecture)</p>
+        <h1 style='color: #ef4056; margin: 0;'>سامانه تحلیل هوشمند نظرات دیجی‌کالا</h1>
+        <p style='color: #666; margin-top: 5px;'>استخراج احساسات و تولید استدلال مبتنی بر داده (معماری RAG)</p>
     </div>
-""", unsafe_allow_True=True)
+""", unsafe_allow_html=True)
 
-tab1, tab2 = st.tabs(["🔍 تحلیل زنده متن", "📊 داشبورد آماری"])
+tab1, tab2 = st.tabs(["تحلیل متن", "داشبورد آماری"])
 
 with tab1:
     col1, col2 = st.columns([3, 2], gap="large")
 
     with col1:
-        st.markdown("### 📝 ورود اطلاعات")
+        st.markdown("### ورود اطلاعات")
         user_input = st.text_area(
             "نظر خود را برای تحلیل وارد کنید:",
             placeholder="مثال: این محصول عالی است اما بسته‌بندی آن ضعیف بود...",
             height=200,
             help="متن نظر را اینجا تایپ کنید."
         )
-        analyze_btn = st.button("✨ شروع تحلیل هوشمند")
+        analyze_btn = st.button("شروع تحلیل")
 
     with col2:
         if analyze_btn and user_input:
-            with st.spinner("🤖 هوش مصنوعی در حال فکر کردن..."):
+            with st.spinner("در حال پردازش..."):
                 start_time = time.time()
                 rag = load_rag()
                 score, confidence = rag.get_sentiment(user_input)
@@ -152,15 +160,15 @@ with tab1:
                 elapsed = time.time() - start_time
 
                 if score > 3:
-                    css_class, label, icon = "positive", "مثبت", "😊"
+                    css_class, label = "positive", "مثبت"
                 elif score < 3:
-                    css_class, label, icon = "negative", "منفی", "😞"
+                    css_class, label = "negative", "منفی"
                 else:
-                    css_class, label, icon = "neutral", "خنثی", "😐"
+                    css_class, label = "neutral", "خنثی"
 
                 st.markdown(f"""
                     <div class="sentiment-box {css_class}">
-                        <h2 style='margin:0;'>{label} {icon}</h2>
+                        <h2 style='margin:0;'>وضعیت: {label}</h2>
                         <hr style='border: 0.5px solid rgba(0,0,0,0.1);'>
                         <p style='font-size: 1.1em;'><b>امتیاز شدت:</b> {score} از ۵</p>
                         <p style='font-size: 1.1em;'><b>ضریب اطمینان:</b> {confidence:.2%}</p>
@@ -168,26 +176,26 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
 
-                st.markdown("### 💡 دلیل و استدلال مدل:")
+                st.markdown("### دلیل و استدلال:")
                 st.info(explanation)
         else:
-            st.info("👈 متن نظر را وارد کرده و دکمه تحلیل را بزنید تا نتایج اینجا نمایش داده شوند.")
+            st.info("متن نظر را وارد کرده و دکمه تحلیل را بزنید تا نتایج اینجا نمایش داده شوند.")
 
     if analyze_btn and user_input:
         st.markdown("---")
-        with st.expander("📚 شواهد بازیابی شده (RAG Context)", expanded=False):
+        with st.expander("شواهد بازیابی شده (RAG Context)", expanded=False):
             for i, s in enumerate(similar, 1):
                 st.write(f"**{i}.** {s}")
 
 with tab2:
-    st.header("📈 نگاهی به داده‌های مرجع")
+    st.header("داده‌های مرجع")
     try:
         df = pd.read_csv("data/digikala_samples.csv")
 
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("تعداد نظرات", len(df))
-        m2.metric("مدل برتر", "mBERT")
-        m3.metric("نوع معماری", "RAG")
+        m2.metric("مدل", "mBERT")
+        m3.metric("معماری", "RAG")
         m4.metric("زبان", "فارسی")
 
         c1, c2 = st.columns(2)
@@ -196,7 +204,7 @@ with tab2:
             df['length'] = df['text'].str.len()
             fig_hist = px.histogram(
                 df, x="length",
-                title="توزیع طول نظرات (تعداد کاراکتر)",
+                title="توزیع طول نظرات",
                 color_discrete_sequence=['#ef4056'],
                 labels={'length': 'طول متن'}
             )
@@ -204,7 +212,7 @@ with tab2:
             st.plotly_chart(fig_hist, width='stretch')
 
         with c2:
-            st.markdown("### 📋 پیش‌نمایش داده‌ها")
+            st.markdown("### پیش‌نمایش داده‌ها")
             st.dataframe(df.head(15), width='stretch')
 
     except Exception as e:
@@ -214,7 +222,7 @@ with tab2:
 st.markdown("---")
 st.markdown("""
     <div style='text-align: center; color: #888; padding: 20px;'>
-        طراحی شده برای پروژه ارشد هوش مصنوعی • ۱۴۰۳<br>
+        (پروژه NLP - Taha Tehrani Nasab)<br>
         <small>قدرت گرفته از Hugging Face Transformers & FAISS</small>
     </div>
 """, unsafe_allow_html=True)

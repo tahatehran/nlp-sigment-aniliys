@@ -4,11 +4,13 @@ import pandas as pd
 from processor import SentimentRAG
 
 class TestSentimentRAG(unittest.TestCase):
+    dummy_created = False
+    data_path = "data/test_samples.csv"
+
     @classmethod
     def setUpClass(cls):
-        # Create a dummy data file for testing if it doesn't exist
         os.makedirs("data", exist_ok=True)
-        if not os.path.exists("data/digikala_samples.csv"):
+        if not os.path.exists(cls.data_path):
             df = pd.DataFrame({
                 'text': [
                     "این یک گوشی عالی است و من از خرید آن بسیار راضی هستم.",
@@ -18,12 +20,17 @@ class TestSentimentRAG(unittest.TestCase):
                     "ارسال خیلی دیر انجام شد و جعبه پاره بود."
                 ]
             })
-            df.to_csv("data/digikala_samples.csv", index=False)
+            df.to_csv(cls.data_path, index=False)
+            cls.dummy_created = True
 
-        cls.rag = SentimentRAG("data/digikala_samples.csv")
+        cls.rag = SentimentRAG(cls.data_path)
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.dummy_created and os.path.exists(cls.data_path):
+            os.remove(cls.data_path)
 
     def test_sentiment_scoring(self):
-        # nlptown model returns 1-5 stars
         score, confidence = self.rag.get_sentiment("محصول فوق العاده ای بود")
         self.assertGreaterEqual(score, 1)
         self.assertLessEqual(score, 5)

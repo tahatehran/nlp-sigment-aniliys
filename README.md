@@ -1,3 +1,15 @@
+---
+title: NLP Sentiment Analysis Digikala
+emoji: 📊
+colorFrom: red
+colorTo: pink
+sdk: streamlit
+sdk_version: 1.58.0
+python_version: 3.12
+app_file: app.py
+pinned: false
+---
+
 # سیستم هوشمند تحلیل احساسات نظرات دیجی‌کالا (RAG-based)
 
 این پروژه یک سیستم پیشرفته برای تحلیل نظرات کاربران دیجی‌کالا است که با استفاده از معماری **RAG (Retrieval-Augmented Generation)** طراحی شده است. این سیستم نه تنها احساس نظر (مثبت/منفی) را تشخیص می‌دهد، بلکه با جستجو در میان ۲۰۰۰ نظر واقعی دیگر، دلیلی برای تحلیل خود ارائه می‌کند.

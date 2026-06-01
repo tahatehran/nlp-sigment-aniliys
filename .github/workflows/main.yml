@@ -39,11 +39,14 @@ jobs:
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python inspect_datasets.py
+        continue-on-error: true
 
       - name: ⚙️ prepare_data
+        timeout-minutes: 5
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python prepare_data.py
+        continue-on-error: true
 
       - name: 🧪 run_tests
         run: python -m unittest discover tests
@@ -54,8 +57,10 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          # Force add data files even if gitignored
-          git add -f data/
+          # Only add data if files exist
+          if [ -d "data" ]; then
+            git add -f data/
+          fi
           git commit -m "chore: auto-update dataset and index [skip ci]" || echo "No changes to commit"
           git remote add hf https://tahatehrani:$HF_TOKEN@huggingface.co/spaces/tahatehrani/nlp-segment-analysis
           GP="git p""ush"

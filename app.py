@@ -105,6 +105,12 @@ def load_rag():
     # Data is pre-prepared by GitHub Actions or handled via online fallback in SentimentRAG
     return SentimentRAG()
 
+def get_rag_instance_safe():
+    """Returns the RAG instance ONLY if it has already been initialized."""
+    if SentimentRAG._instance and hasattr(SentimentRAG._instance, 'initialized') and SentimentRAG._instance.initialized:
+        return SentimentRAG._instance
+    return None
+
 # Sidebar
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/2/29/Digikala_logo.svg", width=200)
@@ -192,12 +198,10 @@ with tab2:
         if os.path.exists(data_file):
             df = pd.read_csv(data_file)
         else:
-            # Try to get data from RAG instance if loaded
-            try:
-                rag = load_rag()
-                df = rag.df
-            except:
-                pass
+            # ONLY attempt to retrieve from RAG if it is already initialized to avoid OOM/Bottlenecks
+            rag_instance = get_rag_instance_safe()
+            if rag_instance:
+                df = rag_instance.df
 
         if df is not None:
             m1, m2, m3, m4 = st.columns(4)
@@ -223,7 +227,7 @@ with tab2:
                 st.markdown("### پیش‌نمایش داده‌ها")
                 st.dataframe(df.head(15), width='stretch')
         else:
-            st.warning("دیتابیس نظرات یافت نشد. لطفاً منتظر بروزرسانی خودکار بمانید یا دکمه تحلیل را بزنید تا داده‌ها آنلاین بارگذاری شوند.")
+            st.warning("دیتابیس نظرات یافت نشد. لطفاً منتظر بروزرسانی خودکار بمانید یا دکمه تحلیل (در زبانه اول) را بزنید تا داده‌ها بارگذاری شوند.")
 
     except Exception as e:
         st.error(f"⚠️ خطا در بارگذاری دیتابیس: {e}")

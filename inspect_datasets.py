@@ -1,6 +1,9 @@
 import sys
-from datasets import load_dataset
 import os
+from datasets import load_dataset
+
+# Using os._exit to prevent potential thread state issues during CI/CD cleanup
+# which can cause exit code 134/139.
 
 datasets_to_check = [
     "fibonacciai/Digikala-Comments",
@@ -12,21 +15,24 @@ def validate_datasets():
     failed = False
 
     for ds_name in datasets_to_check:
-        print(f"Checking {ds_name}...")
+        print(f"Checking accessibility: {ds_name}...")
         try:
-            # Removed trust_remote_code as suggested by warning
-            load_dataset(ds_name, split='train', token=hf_token, streaming=True)
+            # Streaming + taking 1 item to ensure real connectivity
+            ds = load_dataset(ds_name, split='train', token=hf_token, streaming=True)
+            _ = next(iter(ds))
             print(f"✅ {ds_name} is accessible.")
         except Exception as e:
             print(f"❌ Error loading {ds_name}: {e}")
             failed = True
 
     if failed:
-        print("\n[!] One or more critical datasets are unavailable. Build failed.")
-        sys.exit(1)
+        print("\n[!] One or more critical datasets are unavailable.")
+        sys.stdout.flush()
+        os._exit(1)
 
     print("\n[+] All upstream datasets are healthy.")
-    sys.exit(0)
+    sys.stdout.flush()
+    os._exit(0)
 
 if __name__ == "__main__":
     validate_datasets()

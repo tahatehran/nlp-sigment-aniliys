@@ -102,7 +102,7 @@ st.markdown("""
 
 @st.cache_resource
 def load_rag():
-    # Data is now pre-prepared by GitHub Actions
+    # Data is pre-prepared by GitHub Actions or handled via online fallback in SentimentRAG
     return SentimentRAG()
 
 # Sidebar
@@ -144,8 +144,12 @@ with tab1:
 
     with col2:
         if analyze_btn and user_input:
-            with st.spinner("در حال پردازش..."):
+            with st.spinner("در حال پردازش و تحلیل هوشمند..."):
                 start_time = time.time()
+                # Check if data exists locally to inform user
+                if not os.path.exists("data/digikala_samples.csv"):
+                    st.warning("⚠️ دیتابیس محلی یافت نشد. در حال فراخوانی آنلاین داده‌ها...")
+
                 rag = load_rag()
                 score, confidence = rag.get_sentiment(user_input)
                 explanation = rag.generate_explanation(user_input, score)
@@ -184,9 +188,18 @@ with tab2:
     st.header("داده‌های مرجع")
     try:
         data_file = "data/digikala_samples.csv"
+        df = None
         if os.path.exists(data_file):
             df = pd.read_csv(data_file)
+        else:
+            # Try to get data from RAG instance if loaded
+            try:
+                rag = load_rag()
+                df = rag.df
+            except:
+                pass
 
+        if df is not None:
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("تعداد نظرات", len(df))
             m2.metric("مدل", "mBERT")
@@ -210,7 +223,7 @@ with tab2:
                 st.markdown("### پیش‌نمایش داده‌ها")
                 st.dataframe(df.head(15), width='stretch')
         else:
-            st.warning("دیتابیس نظرات یافت نشد. لطفاً منتظر بروزرسانی خودکار بمانید.")
+            st.warning("دیتابیس نظرات یافت نشد. لطفاً منتظر بروزرسانی خودکار بمانید یا دکمه تحلیل را بزنید تا داده‌ها آنلاین بارگذاری شوند.")
 
     except Exception as e:
         st.error(f"⚠️ خطا در بارگذاری دیتابیس: {e}")

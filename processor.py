@@ -5,6 +5,7 @@ from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 from sentence_transformers import SentenceTransformer
 import faiss
 import os
+import sys
 
 class SentimentRAG:
     _instance = None
@@ -14,11 +15,22 @@ class SentimentRAG:
             cls._instance = super(SentimentRAG, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, data_path="data/digikala_samples.csv"):
+    def __init__(self, data_path="data/digikala_samples.csv", index_path=None):
         if hasattr(self, 'initialized') and self.initialized:
             return
 
-        print("Initializing SentimentRAG models...")
+        # If index_path is not provided, try to infer it from data_path
+        if index_path is None:
+            if data_path == "data/digikala_samples.csv":
+                index_path = "data/faiss_index.bin"
+            else:
+                # For tests or custom paths, don't default to the production index
+                index_path = data_path.replace(".csv", ".bin")
+
+        print(f"Initializing SentimentRAG models (Low Resource Mode)...")
+        # Optimize CPU threads for 2-CPU environments
+        torch.set_num_threads(2)
+
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
@@ -27,7 +39,8 @@ class SentimentRAG:
             "sentiment-analysis",
             model="nlptown/bert-base-multilingual-uncased-sentiment",
             device=-1 if self.device == "cpu" else 0,
-            token=hf_token
+            token=hf_token,
+            model_kwargs={"low_cpu_mem_usage": True} if self.device == "cpu" else {}
         )
 
         # 2. Embedding Model
@@ -38,33 +51,64 @@ class SentimentRAG:
 
         # 3. Reasoning Model
         self.gen_tokenizer = AutoTokenizer.from_pretrained("HooshvareLab/gpt2-fa-comment", token=hf_token)
-        self.gen_model = AutoModelForCausalLM.from_pretrained("HooshvareLab/gpt2-fa-comment", token=hf_token).to(self.device)
+        self.gen_model = AutoModelForCausalLM.from_pretrained(
+            "HooshvareLab/gpt2-fa-comment",
+            token=hf_token,
+            low_cpu_mem_usage=True
+        ).to(self.device)
 
-        # Load Data
-        if not os.path.exists(data_path):
-            from prepare_data import prepare_data
-            prepare_data()
+        # Load Data & Index
+        self._load_resources(data_path, index_path)
 
-        if not os.path.exists(data_path):
-            raise FileNotFoundError(f"Data file {data_path} could not be created.")
+        self.initialized = True
 
-        self.df = pd.read_csv(data_path)
-        self.texts = self.df['text'].tolist()
+    def _load_resources(self, data_path, index_path):
+        self.df = None
+        self.texts = []
 
-        print(f"Building FAISS index for {len(self.texts)} items...")
+        # Try local first
+        if os.path.exists(data_path):
+            self.df = pd.read_csv(data_path)
+            self.texts = self.df['text'].tolist()
+        else:
+            print(f"Data file {data_path} missing. Attempting online recovery...")
+            try:
+                from prepare_data import fetch_all_data
+                self.df = fetch_all_data()
+                if self.df is not None:
+                    self.texts = self.df['text'].tolist()
+            except Exception as e:
+                print(f"Online recovery failed: {e}")
+
+        if self.df is None:
+             raise FileNotFoundError(f"Could not load data from {data_path} or online sources.")
+
+        # Handle Index
+        if os.path.exists(index_path):
+            print(f"Loading pre-generated FAISS index from {index_path}...")
+            loaded_index = faiss.read_index(index_path)
+            # Safety check: ensure index size matches data size
+            if loaded_index.ntotal == len(self.texts):
+                self.index = loaded_index
+            else:
+                print("Index size mismatch. Rebuilding index...")
+                self._build_index()
+        else:
+            print(f"Building FAISS index (Index file {index_path} missing)...")
+            self._build_index()
+
+    def _build_index(self):
         embeddings = self.embed_model.encode(self.texts, show_progress_bar=False)
         self.index = faiss.IndexFlatL2(embeddings.shape[1])
         self.index.add(np.array(embeddings).astype('float32'))
 
-        self.initialized = True
-
     def get_sentiment(self, text):
-        # Truncate text to fit model max length
         result = self.sentiment_pipe(text[:512])[0]
         score = int(result['label'].split()[0])
         return score, result['score']
 
     def retrieve_similar(self, text, k=2):
+        k = min(k, len(self.texts))
         query_vec = self.embed_model.encode([text])
         distances, indices = self.index.search(np.array(query_vec).astype('float32'), k)
         return [self.texts[i] for i in indices[0]]
@@ -77,14 +121,15 @@ class SentimentRAG:
         prompt = f"متن: {text[:100]}\nاحساس: {sentiment_label}\nشواهد: {context}\nدلیل فنی:"
         inputs = self.gen_tokenizer(prompt, return_tensors="pt", truncation=True, max_length=400).to(self.device)
 
-        outputs = self.gen_model.generate(
-            **inputs,
-            max_new_tokens=50,
-            do_sample=True,
-            top_p=0.9,
-            temperature=0.7,
-            pad_token_id=self.gen_tokenizer.eos_token_id
-        )
+        with torch.no_grad():
+            outputs = self.gen_model.generate(
+                **inputs,
+                max_new_tokens=50,
+                do_sample=True,
+                top_p=0.9,
+                temperature=0.7,
+                pad_token_id=self.gen_tokenizer.eos_token_id
+            )
 
         full_text = self.gen_tokenizer.decode(outputs[0], skip_special_tokens=True)
         if "دلیل فنی:" in full_text:

@@ -20,6 +20,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+
+      - name: 💾 cache_hf_models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-cache-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            hf-cache-${{ runner.os }}-
 
       - name: 📥 install_dependencies
         run: |
@@ -45,9 +54,9 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          # Force add data file even if gitignored
-          git add -f data/digikala_samples.csv
-          git commit -m "chore: auto-update dataset [skip ci]" || echo "No changes to commit"
+          # Force add data files even if gitignored
+          git add -f data/
+          git commit -m "chore: auto-update dataset and index [skip ci]" || echo "No changes to commit"
           git remote add hf https://tahatehrani:$HF_TOKEN@huggingface.co/spaces/tahatehrani/nlp-segment-analysis
           GP="git p""ush"
           $GP --force hf main

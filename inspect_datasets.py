@@ -15,7 +15,7 @@ def validate_datasets():
         print(f"Checking {ds_name}...")
         try:
             # Removed trust_remote_code as suggested by warning
-            load_dataset(ds_name, split='train', token=hf_token)
+            load_dataset(ds_name, split='train', token=hf_token, streaming=True)
             print(f"✅ {ds_name} is accessible.")
         except Exception as e:
             print(f"❌ Error loading {ds_name}: {e}")

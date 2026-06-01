@@ -49,6 +49,9 @@ jobs:
         continue-on-error: true
 
       - name: 🧪 run_tests
+        timeout-minutes: 10
+        env:
+          HUGGINGFACE_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python -m unittest discover tests
 
       - name: 🚢 push_to_hf

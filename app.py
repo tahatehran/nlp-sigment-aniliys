@@ -34,7 +34,6 @@ st.markdown("""
         background-color: var(--bg-light);
     }
 
-    /* Professional Card Styling */
     .stMetric {
         background-color: white;
         padding: 15px;
@@ -77,7 +76,6 @@ st.markdown("""
     .negative { background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-right: 8px solid #f44336; color: #c62828; }
     .neutral { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-right: 8px solid #ff9800; color: #ef6c00; }
 
-    /* Custom Header */
     .custom-header {
         background-color: white;
         padding: 20px;
@@ -86,7 +84,6 @@ st.markdown("""
         margin-bottom: 30px;
     }
 
-    /* Expander Styling */
     .stExpander {
         border: none !important;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -94,7 +91,6 @@ st.markdown("""
         background-color: white;
     }
 
-    /* Table Styling */
     div[data-testid="stDataFrame"] {
         direction: rtl;
         text-align: right;
@@ -106,10 +102,7 @@ st.markdown("""
 
 @st.cache_resource
 def load_rag():
-    # Always call prepare_data to keep it updated as requested
-    from prepare_data import prepare_data
-    with st.spinner("در حال بروزرسانی و بارگذاری داده‌ها..."):
-        prepare_data()
+    # Data is now pre-prepared by GitHub Actions
     return SentimentRAG()
 
 # Sidebar
@@ -190,30 +183,34 @@ with tab1:
 with tab2:
     st.header("داده‌های مرجع")
     try:
-        df = pd.read_csv("data/digikala_samples.csv")
+        data_file = "data/digikala_samples.csv"
+        if os.path.exists(data_file):
+            df = pd.read_csv(data_file)
 
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("تعداد نظرات", len(df))
-        m2.metric("مدل", "mBERT")
-        m3.metric("معماری", "RAG")
-        m4.metric("زبان", "فارسی")
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("تعداد نظرات", len(df))
+            m2.metric("مدل", "mBERT")
+            m3.metric("معماری", "RAG")
+            m4.metric("زبان", "فارسی")
 
-        c1, c2 = st.columns(2)
+            c1, c2 = st.columns(2)
 
-        with c1:
-            df['length'] = df['text'].str.len()
-            fig_hist = px.histogram(
-                df, x="length",
-                title="توزیع طول نظرات",
-                color_discrete_sequence=['#ef4056'],
-                labels={'length': 'طول متن'}
-            )
-            fig_hist.update_layout(plot_bgcolor='white')
-            st.plotly_chart(fig_hist, width='stretch')
+            with c1:
+                df['length'] = df['text'].str.len()
+                fig_hist = px.histogram(
+                    df, x="length",
+                    title="توزیع طول نظرات",
+                    color_discrete_sequence=['#ef4056'],
+                    labels={'length': 'طول متن'}
+                )
+                fig_hist.update_layout(plot_bgcolor='white')
+                st.plotly_chart(fig_hist, width='stretch')
 
-        with c2:
-            st.markdown("### پیش‌نمایش داده‌ها")
-            st.dataframe(df.head(15), width='stretch')
+            with c2:
+                st.markdown("### پیش‌نمایش داده‌ها")
+                st.dataframe(df.head(15), width='stretch')
+        else:
+            st.warning("دیتابیس نظرات یافت نشد. لطفاً منتظر بروزرسانی خودکار بمانید.")
 
     except Exception as e:
         st.error(f"⚠️ خطا در بارگذاری دیتابیس: {e}")

@@ -58,8 +58,8 @@ jobs:
           # 2. Extract files and include CSV but EXCLUDE binary BIN index
           mkdir deploy_tmp
           # Copy source code
-          cp app.py processor.py prepare_data.py requirements.txt README.md WIKI.md deploy_tmp/
-          cp -r colab tests deploy_tmp/
+          cp app.py processor.py prepare_data.py requirements.txt README.md deploy_tmp/
+
 
           # Handle data: include CSV but delete BIN to avoid rejection
           mkdir -p deploy_tmp/data

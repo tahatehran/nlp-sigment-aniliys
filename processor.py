@@ -30,27 +30,28 @@ class SentimentRAG:
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         hf_token = os.getenv("HUGGINGFACE_TOKEN")
+        if hf_token == "": hf_token = None
 
         # 1. Sentiment Model
         self.sentiment_pipe = pipeline(
             "sentiment-analysis",
             model="nlptown/bert-base-multilingual-uncased-sentiment",
             device=-1 if self.device == "cpu" else 0,
-            token=hf_token,
+            token=hf_token if hf_token else None,
             model_kwargs={"low_cpu_mem_usage": True} if self.device == "cpu" else {}
         )
 
         # 2. Embedding Model
         self.embed_model = SentenceTransformer(
             'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
-            use_auth_token=hf_token
+            use_auth_token=hf_token if hf_token else None
         )
 
         # 3. Reasoning Model
-        self.gen_tokenizer = AutoTokenizer.from_pretrained("HooshvareLab/gpt2-fa-comment", token=hf_token)
+        self.gen_tokenizer = AutoTokenizer.from_pretrained("HooshvareLab/gpt2-fa-comment", token=hf_token if hf_token else None)
         self.gen_model = AutoModelForCausalLM.from_pretrained(
             "HooshvareLab/gpt2-fa-comment",
-            token=hf_token,
+            token=hf_token if hf_token else None,
             low_cpu_mem_usage=True
         ).to(self.device)
 

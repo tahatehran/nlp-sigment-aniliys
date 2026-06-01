@@ -9,6 +9,8 @@ jobs:
   cleanup:
     name: 🧹 Remove Junk Files
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: 📥 download_code
         uses: actions/checkout@v4

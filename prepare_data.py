@@ -58,17 +58,27 @@ def prepare_data():
         raise RuntimeError("هیچ داده‌ای از Hugging Face بارگذاری نشد. لطفاً اتصال اینترنت یا توکن API خود را بررسی کنید.")
 
     print("Merging and cleaning...")
-    df = pd.concat(dfs, ignore_index=True)
-    df = df.dropna(subset=['text'])
-    df['text'] = df['text'].apply(clean_text)
-    df = df[df['text'].str.len() > 25]
-    df = df.drop_duplicates(subset=['text'])
 
-    if df.empty:
+    # Process each source to ensure we get a balanced sample if possible
+    processed_dfs = []
+    target_total = 800
+    per_source = target_total // len(dfs)
+
+    for source_df in dfs:
+        source_df = source_df.dropna(subset=['text'])
+        source_df['text'] = source_df['text'].apply(clean_text)
+        source_df = source_df[source_df['text'].str.len() > 25]
+        source_df = source_df.drop_duplicates(subset=['text'])
+
+        if not source_df.empty:
+            s_size = min(len(source_df), per_source)
+            processed_dfs.append(source_df.sample(n=s_size, random_state=42))
+
+    if not processed_dfs:
         raise RuntimeError("پس از فیلتر کردن و پاکسازی، هیچ داده معتبری باقی نماند.")
 
-    sample_size = min(500, len(df))
-    df_sample = df.sample(n=sample_size, random_state=42)
+    df_sample = pd.concat(processed_dfs, ignore_index=True)
+    df_sample = df_sample.sample(frac=1, random_state=42).reset_index(drop=True)
 
     os.makedirs("data", exist_ok=True)
     output_path = "data/digikala_samples.csv"

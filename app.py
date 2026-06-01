@@ -206,7 +206,7 @@ with tab2:
         if df is not None:
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("تعداد نظرات", len(df))
-            m2.metric("مدل", "mBERT")
+            m2.metric("مدل", "bert-base")
             m3.metric("معماری", "RAG")
             m4.metric("زبان", "فارسی")
 

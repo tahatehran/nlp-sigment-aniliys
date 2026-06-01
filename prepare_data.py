@@ -91,19 +91,17 @@ def fetch_all_data():
 def generate_faiss_index(df, output_dir="data"):
     """Pre-generates FAISS index to save RAM/CPU in production."""
     print("Pre-generating FAISS index...")
-    try:
-        model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
-        texts = df['text'].tolist()
-        embeddings = model.encode(texts, show_progress_bar=True)
+    # Propagate exceptions to ensure CI/CD fails on error
+    model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+    texts = df['text'].tolist()
+    embeddings = model.encode(texts, show_progress_bar=True)
 
-        index = faiss.IndexFlatL2(embeddings.shape[1])
-        index.add(np.array(embeddings).astype('float32'))
+    index = faiss.IndexFlatL2(embeddings.shape[1])
+    index.add(np.array(embeddings).astype('float32'))
 
-        os.makedirs(output_dir, exist_ok=True)
-        faiss.write_index(index, os.path.join(output_dir, "faiss_index.bin"))
-        print(f"✅ FAISS index saved to {output_dir}/faiss_index.bin")
-    except Exception as e:
-        print(f"❌ FAISS generation failed: {e}")
+    os.makedirs(output_dir, exist_ok=True)
+    faiss.write_index(index, os.path.join(output_dir, "faiss_index.bin"))
+    print(f"✅ FAISS index saved to {output_dir}/faiss_index.bin")
 
 def prepare_data():
     print(f"Starting data preparation...")

@@ -14,9 +14,8 @@ def clean_text(text):
     return text
 
 def get_samples_from_stream(ds_name, split, token, target_count, buffer_size=1000):
-    print(f"Streaming samples from {ds_name} (Max buffer: {buffer_size})...")
+    print(f"Streaming samples from {ds_name}...")
     try:
-        # Use smaller buffer and target for CI speed
         ds = load_dataset(ds_name, split=split, token=token, streaming=True)
         samples = []
         count = 0
@@ -38,18 +37,15 @@ def get_samples_from_stream(ds_name, split, token, target_count, buffer_size=100
                 break
 
         if not samples:
-            print(f"⚠️ No valid samples found in {ds_name}")
             return None
 
         df = pd.DataFrame(samples)
-        print(f"✅ Extracted {len(df)} samples from {ds_name}")
         return df
-    except Exception as e:
-        print(f"❌ Error streaming from {ds_name}: {e}")
+    except Exception:
         return None
 
 def fetch_all_data(target_total=500):
-    """Lighter data fetching for CI resilience."""
+    """Lighter data fetching for online fallback."""
     hf_token = os.getenv("HUGGINGFACE_TOKEN")
     datasets_to_load = [
         ("fibonacciai/Digikala-Comments", "train"),
@@ -82,43 +78,24 @@ def fetch_all_data(target_total=500):
     return df_sample
 
 def generate_faiss_index(df, output_dir="data"):
-    print("Pre-generating FAISS index...")
     model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
     texts = df['text'].tolist()
     embeddings = model.encode(texts, show_progress_bar=False)
-
     index = faiss.IndexFlatL2(embeddings.shape[1])
     index.add(np.array(embeddings).astype('float32'))
-
     os.makedirs(output_dir, exist_ok=True)
     faiss.write_index(index, os.path.join(output_dir, "faiss_index.bin"))
-    print(f"✅ FAISS index saved to {output_dir}/faiss_index.bin")
 
 def prepare_data():
-    print(f"Starting data preparation (Optimized)...")
     df = fetch_all_data()
-
-    if df is None:
-        print("WARNING: No data could be loaded. Falling back to empty/mock dataset for CI safety.")
-        # Create a mock file so CI doesn't crash if we choose to continue
+    if df is not None:
         os.makedirs("data", exist_ok=True)
-        pd.DataFrame({'text': ["نمونه نظر دیجی‌کالا برای تست سیستم."]}).to_csv("data/digikala_samples.csv", index=False)
-        return
-
-    os.makedirs("data", exist_ok=True)
-    output_path = "data/digikala_samples.csv"
-    df.to_csv(output_path, index=False)
-    print(f"Successfully saved {len(df)} samples to {output_path}")
-
-    generate_faiss_index(df)
-    print("Data preparation complete.")
+        df.to_csv("data/digikala_samples.csv", index=False)
+        generate_faiss_index(df)
 
 if __name__ == "__main__":
     try:
         prepare_data()
-        sys.stdout.flush()
         os._exit(0)
-    except Exception as e:
-        print(f"FATAL ERROR: {e}")
-        sys.stdout.flush()
+    except Exception:
         os._exit(1)

@@ -19,15 +19,13 @@ class SentimentRAG:
         if hasattr(self, 'initialized') and self.initialized:
             return
 
-        # If index_path is not provided, try to infer it from data_path
         if index_path is None:
             if data_path == "data/digikala_samples.csv":
                 index_path = "data/faiss_index.bin"
             else:
                 index_path = data_path.replace(".csv", ".bin")
 
-        print(f"Initializing SentimentRAG models (Low Resource Mode)...")
-        # Optimize CPU threads for 2-CPU environments
+        print(f"Initializing SentimentRAG models (Online Optimized)...")
         torch.set_num_threads(2)
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -65,47 +63,46 @@ class SentimentRAG:
         self.df = None
         self.texts = []
 
-        # Try local first
+        # Priority 1: Local file (if exists and is not LFS pointer)
         if os.path.exists(data_path):
             try:
-                self.df = pd.read_csv(data_path)
-                # Check if it's an LFS pointer (very small file size and starts with version)
-                if len(self.df) > 0 and 'version https://git-lfs' in str(self.df.columns[0]):
-                    raise ValueError("Detected LFS pointer instead of actual CSV data.")
-                self.texts = self.df['text'].tolist()
+                temp_df = pd.read_csv(data_path)
+                if len(temp_df) > 0 and 'version https://git-lfs' in str(temp_df.columns[0]):
+                    print("Found LFS pointer. Skipping local load.")
+                else:
+                    self.df = temp_df
+                    self.texts = self.df['text'].tolist()
+                    print(f"Loaded {len(self.texts)} samples from local file.")
             except Exception as e:
-                print(f"Local data load failed (possibly LFS pointer): {e}")
-                self.df = None
+                print(f"Local CSV load failed: {e}")
 
-        # Online fallback if local failed
+        # Priority 2: Online streaming fallback
         if self.df is None:
-            print(f"Attempting online recovery for data...")
+            print("Fetching data from Hugging Face Hub (Streaming)...")
             try:
                 from prepare_data import fetch_all_data
                 self.df = fetch_all_data()
                 if self.df is not None:
                     self.texts = self.df['text'].tolist()
+                    print(f"Streamed {len(self.texts)} samples online.")
             except Exception as e:
-                print(f"Online recovery failed: {e}")
+                print(f"Online data streaming failed: {e}")
 
         if self.df is None:
-             raise FileNotFoundError(f"Could not load data from {data_path} or online sources.")
+             raise FileNotFoundError("System failed to load any data (Local/Online).")
 
-        # Handle Index
+        # FAISS Index Handling
         if os.path.exists(index_path):
-            print(f"Loading pre-generated FAISS index from {index_path}...")
             try:
                 loaded_index = faiss.read_index(index_path)
-                # Safety check: ensure index size matches data size
                 if loaded_index.ntotal == len(self.texts):
                     self.index = loaded_index
+                    print("Loaded pre-generated FAISS index.")
                     return
-                else:
-                    print("Index size mismatch. Rebuilding index...")
-            except Exception as e:
-                print(f"Failed to read index (possibly LFS pointer or corrupted): {e}")
+            except Exception:
+                pass
 
-        print(f"Building FAISS index in-memory...")
+        print("Building FAISS index in memory...")
         self._build_index()
 
     def _build_index(self):

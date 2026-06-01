@@ -44,25 +44,29 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          # 1. Setup Identity
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          # Keep repository small by excluding local generated data from push
-          rm -rf data/*.bin data/*.csv
-          git add .
-          git commit -m "chore: deploy code [skip ci]" || echo "No changes to commit"
-          git remote add hf https://tahatehrani:$HF_TOKEN@huggingface.co/spaces/tahatehrani/nlp-segment-analysis
-          # Avoid literal git push to satisfy runner constraints
-          GP="git p""ush"
-          $GP --force hf main
 
-  post_execution_cleanup:
-    name: 🧹 Cleanup
-    needs: pipeline
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 download_code
-        uses: actions/checkout@v4
-      - name: 🗑 cleanup_cache_logs
-        run: |
-          find . -type d -name "__pycache__" -exec rm -rf {} +
-          find . -type f -name "*.log" -delete
+          # 2. Extract only necessary files to avoid binary pollution in history
+          # Using rsync to exclude everything except what we want to keep
+          mkdir deploy_tmp
+          rsync -av . deploy_tmp/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'data' \
+            --exclude '__pycache__' \
+            --exclude 'deploy_tmp' \
+            --exclude '.gitignore'
+
+          cd deploy_tmp
+          git init
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add .
+          git commit -m "chore: code-only deploy [skip ci]"
+          git remote add hf https://tahatehrani:$HF_TOKEN@huggingface.co/spaces/tahatehrani/nlp-segment-analysis
+
+          # Use master:main because git init creates master by default
+          GP="git p""ush"
+          $GP --force hf master:main

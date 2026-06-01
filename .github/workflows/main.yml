@@ -34,6 +34,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: ⚙️ prepare_data
+        timeout-minutes: 5
+        env:
+          HUGGINGFACE_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python prepare_data.py
+        continue-on-error: true
+
       - name: 🧪 run_tests
         timeout-minutes: 10
         env:
@@ -48,25 +55,29 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
-          # 2. Extract only necessary files to avoid binary pollution in history
-          # Using rsync to exclude everything except what we want to keep
+          # 2. Extract files and include CSV but EXCLUDE binary BIN index
           mkdir deploy_tmp
-          rsync -av . deploy_tmp/ \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude 'data' \
-            --exclude '__pycache__' \
-            --exclude 'deploy_tmp' \
-            --exclude '.gitignore'
+          # Copy source code
+          cp app.py processor.py prepare_data.py requirements.txt README.md WIKI.md deploy_tmp/
+          cp -r colab tests deploy_tmp/
+
+          # Handle data: include CSV but delete BIN to avoid rejection
+          mkdir -p deploy_tmp/data
+          if [ -f "data/digikala_samples.csv" ]; then
+            cp data/digikala_samples.csv deploy_tmp/data/
+          fi
+
+          # Explicitly ensure binary index is NOT there
+          rm -f deploy_tmp/data/*.bin
 
           cd deploy_tmp
           git init
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           git add .
-          git commit -m "chore: code-only deploy [skip ci]"
+          git commit -m "chore: code and dataset deploy [skip ci]"
           git remote add hf https://tahatehrani:$HF_TOKEN@huggingface.co/spaces/tahatehrani/nlp-segment-analysis
 
-          # Use master:main because git init creates master by default
+          # Force push to Hugging Face
           GP="git p""ush"
           $GP --force hf master:main

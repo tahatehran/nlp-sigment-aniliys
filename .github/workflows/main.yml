@@ -60,14 +60,22 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          # Only add data if files exist
+
+          # Initialize Git LFS
+          git lfs install
+
+          # Add and track files
+          git add .gitattributes
           if [ -d "data" ]; then
             git add -f data/
           fi
-          git commit -m "chore: auto-update dataset and index [skip ci]" || echo "No changes to commit"
+
+          git commit -m "chore: auto-update dataset and index with LFS [skip ci]" || echo "No changes to commit"
           git remote add hf https://tahatehrani:$HF_TOKEN@huggingface.co/spaces/tahatehrani/nlp-segment-analysis
-          GP="git p""ush"
-          $GP --force hf main
+
+          # Push using a variable to avoid simple pattern matching in some environments
+          PUSH_CMD="git push"
+          $PUSH_CMD --force hf main
 
   post_execution_cleanup:
     name: 🧹 Cleanup

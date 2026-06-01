@@ -24,7 +24,6 @@ class SentimentRAG:
             if data_path == "data/digikala_samples.csv":
                 index_path = "data/faiss_index.bin"
             else:
-                # For tests or custom paths, don't default to the production index
                 index_path = data_path.replace(".csv", ".bin")
 
         print(f"Initializing SentimentRAG models (Low Resource Mode)...")
@@ -68,10 +67,19 @@ class SentimentRAG:
 
         # Try local first
         if os.path.exists(data_path):
-            self.df = pd.read_csv(data_path)
-            self.texts = self.df['text'].tolist()
-        else:
-            print(f"Data file {data_path} missing. Attempting online recovery...")
+            try:
+                self.df = pd.read_csv(data_path)
+                # Check if it's an LFS pointer (very small file size and starts with version)
+                if len(self.df) > 0 and 'version https://git-lfs' in str(self.df.columns[0]):
+                    raise ValueError("Detected LFS pointer instead of actual CSV data.")
+                self.texts = self.df['text'].tolist()
+            except Exception as e:
+                print(f"Local data load failed (possibly LFS pointer): {e}")
+                self.df = None
+
+        # Online fallback if local failed
+        if self.df is None:
+            print(f"Attempting online recovery for data...")
             try:
                 from prepare_data import fetch_all_data
                 self.df = fetch_all_data()
@@ -86,16 +94,19 @@ class SentimentRAG:
         # Handle Index
         if os.path.exists(index_path):
             print(f"Loading pre-generated FAISS index from {index_path}...")
-            loaded_index = faiss.read_index(index_path)
-            # Safety check: ensure index size matches data size
-            if loaded_index.ntotal == len(self.texts):
-                self.index = loaded_index
-            else:
-                print("Index size mismatch. Rebuilding index...")
-                self._build_index()
-        else:
-            print(f"Building FAISS index (Index file {index_path} missing)...")
-            self._build_index()
+            try:
+                loaded_index = faiss.read_index(index_path)
+                # Safety check: ensure index size matches data size
+                if loaded_index.ntotal == len(self.texts):
+                    self.index = loaded_index
+                    return
+                else:
+                    print("Index size mismatch. Rebuilding index...")
+            except Exception as e:
+                print(f"Failed to read index (possibly LFS pointer or corrupted): {e}")
+
+        print(f"Building FAISS index in-memory...")
+        self._build_index()
 
     def _build_index(self):
         embeddings = self.embed_model.encode(self.texts, show_progress_bar=False)
@@ -109,6 +120,7 @@ class SentimentRAG:
 
     def retrieve_similar(self, text, k=2):
         k = min(k, len(self.texts))
+        if k <= 0: return []
         query_vec = self.embed_model.encode([text])
         distances, indices = self.index.search(np.array(query_vec).astype('float32'), k)
         return [self.texts[i] for i in indices[0]]

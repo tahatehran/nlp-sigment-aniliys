@@ -60,6 +60,8 @@ jobs:
           # Copy source code
           cp app.py processor.py prepare_data.py requirements.txt README.md deploy_tmp/
 
+          # Ensure wiki, tests, colab, مقالات, and تمرین_ها are EXCLUDED
+          # (They are naturally excluded since they are not copied to deploy_tmp above)
 
           # Handle data: include CSV but delete BIN to avoid rejection
           mkdir -p deploy_tmp/data

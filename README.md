@@ -24,11 +24,6 @@ pinned: false
 - **رابط کاربری زیبا**: طراحی شده با Streamlit و پشتیبانی کامل از زبان فارسی (RTL).
 
 ---
-
-## 📚 مستندات و آموزش (Wiki)
-ما یک مستندات کامل و خط‌به‌خط برای این پروژه تهیه کرده‌ایم که در پوشه `wiki/` قرار دارد. اگر می‌خواهید بدانید کدها چگونه کار می‌کنند یا قصد ارائه پروژه را دارید، حتماً این بخش را ببینید:
-👉 **[مشاهده دانشنامه پروژه (Wiki)](wiki/README.md)**
-
 ---
 
 ## 🛠 نحوه اجرا در محیط محلی
@@ -52,6 +47,22 @@ streamlit run app.py
 ## ☁️ میزبانی و استقرار
 این پروژه به صورت خودکار در **Hugging Face Spaces** میزبانی می‌شود. برای حفظ سرعت و بهینگی، فایل‌های مستندات و تست‌ها در نسخه سرور آپلود نمی‌شوند.
 👉 [لینک مشاهده زنده پروژه](https://huggingface.co/spaces/tahatehrani/nlp-segment-analysis)
+
+---
+
+## 📚 منابع علمی و ارجاعات (References)
+
+این پروژه با بهره‌گیری از متدولوژی‌های نوین در حوزه NLP و بازیابی اطلاعات طراحی شده است:
+
+1. **RAG-Enhanced Sentiment Analysis System Using Transformer Models and FAISS for Customer Review Analysis**
+   - *متمرکز بر بهینه‌سازی تحلیل احساسات با استفاده از بردارهای بازنمایی و سیستم‌های بازیابی.*
+
+2. **Optimization of Customer Feedback Summarization Using Large Language Models (LLM) and Advanced Retrieval-Augmented Generation**
+   - *مطالعه تخصصی در زمینه بهبود خلاصه‌سازی و استخراج دلیل در بازخوردهای مشتریان با استفاده از معماری پیشرفته RAG.*
+
+3. **Sentiment Analysis of Customer Reviews in E-commerce: A Retrieval-Augmented Generation Approach**
+   - *مقاله مرجع جهت بررسی متدهای پیشرفته در مدل‌سازی نظرات کاربران.*
+   - *لینک مستقیم:* [DiVA Portal - Full Text Access](https://www.diva-portal.org/smash/record.jsf?pid=diva2%3A1935432)
 
 ---
 **توسعه‌دهنده:** Taha Tehrani Nasab

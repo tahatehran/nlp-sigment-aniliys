@@ -1,0 +1,10 @@
+wiki/
+مقالات/
+تمرین_ها/
+tests/
+colab/
+inspect_datasets.py
+*.pyc
+__pycache__/
+.ipynb_checkpoints/
+data/faiss_index.bin
